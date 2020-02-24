@@ -22,22 +22,11 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         tableView.delegate = self
         tableView.dataSource = self
 
-        // Do any additional setup after loading the view.
     }
     
     override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        let query = PFQuery(className:"Posts")
-        query.includeKey("author")
-        query.limit = 20
-        
-        query.findObjectsInBackground { (posts, error) in
-            if posts != nil {
-                self.posts = posts!
-                self.tableView.reloadData()
-            }
-        }
+        fetchPosts()
+        tableView.reloadData()
     }
 
     
@@ -53,28 +42,42 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         let post = posts[indexPath.row]
         
         let user = post["author"] as! PFUser
-        cell.usernameLabel.text = user.username
-        
-        cell.captionLabel.text = post["caption"] as! String
+        cell.usernameLabel.text = user.username!
+        cell.captionLabel.text = post["caption"] as? String
         
         let imageFile = post["image"] as! PFFileObject
-        let UrlString = imageFile.url!
-        let url = URL(string: UrlString)!
         
-        cell.photoView.af_setImage(withURL: url)
+        imageFile.getDataInBackground { (data, error) in
+            if (error != nil) {
+                print(error!.localizedDescription)
+            } else {
+                cell.photoView.image = UIImage(data: data!)
+            }
+        }
+        
+        
+//        let UrlString = imageFile.url!
+//        print(UrlString)
+//        let url = URL(string: UrlString)!
+//
+//
+//        cell.photoView.af_setImage(withURL: url)
         
         return cell
     }
     
-    
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+    func fetchPosts() {
+        
+        let query = PFQuery(className:"Posts")
+        query.includeKey("author")
+        query.limit = 20
+        
+        query.findObjectsInBackground { (posts, error) in
+            if posts != nil {
+                print("Posts were found!")
+                self.posts = posts!
+                self.tableView.reloadData()
+            }
+        }
     }
-    */
-
 }
